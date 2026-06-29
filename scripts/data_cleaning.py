@@ -2,6 +2,7 @@
 import pandas as pd
 import os
 import numpy as np
+from sqlalchemy import create_engine
 
 RAW_FOLDER="data/raw"
 PROCESSED_FOLDER="data/processed"
@@ -231,3 +232,92 @@ print(f"Expense Ratio Anomalies : {len(invalid_expense)}")
 print(f"Return Anomalies : {len(anomalies)}")
 print("Output File : data/processed/07_scheme_performance_clean.csv")
 print("======================================")
+
+def clean_generic_dataset(filename):
+    print(f"\nCleaning {filename}...")
+
+    df = pd.read_csv(f"{RAW_FOLDER}/{filename}")
+
+    original_rows = len(df)
+
+    print("\nMissing Values:")
+    print(df.isnull().sum())
+
+    before = len(df)
+    df = df.drop_duplicates()
+    after = len(df)
+
+    df.to_csv(
+        f"{PROCESSED_FOLDER}/{filename.replace('.csv', '_clean.csv')}",
+        index=False
+    )
+
+    print("\n========== CLEANING SUMMARY ==========")
+    print(f"Original Rows : {original_rows}")
+    print(f"Final Rows    : {len(df)}")
+    print(f"Duplicates Removed : {before-after}")
+    print("======================================")
+
+    # Generic Cleaning Function
+
+# ----------------------------
+# Generic Cleaning Function
+# ----------------------------
+
+def clean_generic_dataset(filename):
+
+    print(f"\nCleaning {filename}...")
+
+    df = pd.read_csv(f"{RAW_FOLDER}/{filename}")
+
+    original_rows = len(df)
+
+    print("\nMissing Values:")
+    print(df.isnull().sum())
+
+    before = len(df)
+
+    df = df.drop_duplicates()
+
+    after = len(df)
+
+    df.to_csv(
+        f"{PROCESSED_FOLDER}/{filename.replace('.csv', '_clean.csv')}",
+        index=False
+    )
+
+    print("\n========== CLEANING SUMMARY ==========")
+    print(f"Original Rows : {original_rows}")
+    print(f"Final Rows    : {len(df)}")
+    print(f"Duplicates Removed : {before-after}")
+    print("======================================")
+
+    generic_files = [
+    "01_fund_master.csv",
+    "03_aum_by_fund_house.csv",
+    "04_monthly_sip_inflows.csv",
+    "05_category_inflows.csv",
+    "06_industry_folio_count.csv",
+    "09_portfolio_holdings.csv",
+    "10_benchmark_indices.csv"
+]
+
+engine = create_engine("sqlite:///database/bluestock_mf.db")
+
+processed_folder = "data/processed"
+
+for file in os.listdir(processed_folder):
+    if file.endswith(".csv"):
+        table_name = file.replace("_clean.csv", "")
+        df = pd.read_csv(os.path.join(processed_folder, file))
+
+        df.to_sql(
+            table_name,
+            engine,
+            if_exists="replace",
+            index=False
+        )
+
+        print(f"{table_name}: {len(df)} rows loaded")
+
+print("\nAll datasets loaded successfully.")
